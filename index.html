@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JM Diamond Shop</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary-purple: #6a1b9a;
+            --accent-gold: #f1c40f;
+            --dark-overlay: rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0; padding: 0; color: white;
+            background: url('https://akmweb.youngjoygame.com/web/gms/image/bc8375c54a43cc02fedcc304033c23bb.webp') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .container { background: var(--dark-overlay); min-height: 100vh; padding: 20px; box-sizing: border-box; }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .main-logo { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--accent-gold); box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
+
+        /* ID & Server Buttons Style Inputs */
+        .id-section { display: flex; gap: 10px; margin-bottom: 20px; }
+        .id-input {
+            flex: 1; padding: 15px; border-radius: 12px; border: 2px solid var(--primary-purple);
+            background: rgba(255, 255, 255, 0.9); color: #333; font-weight: bold; font-size: 16px; outline: none; text-align: center;
+        }
+
+        .category-title {
+            margin: 20px 0 10px; font-weight: bold; display: flex; align-items: center; gap: 8px;
+            color: var(--accent-gold); border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+        .item {
+            background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 15px;
+            padding: 15px; text-align: center; backdrop-filter: blur(8px); transition: 0.3s;
+        }
+        .item.active { border-color: var(--accent-gold); background: rgba(106, 27, 154, 0.4); transform: scale(1.05); }
+        .item img { width: 40px; margin-bottom: 8px; }
+        .item .name { display: block; font-size: 14px; font-weight: bold; }
+        .item .price { display: block; font-size: 13px; color: #00ff88; margin-top: 5px; }
+
+        /* Payment Page Overlay */
+        #paymentPage {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(44, 0, 62, 0.85), rgba(44, 0, 62, 0.85)), 
+                        url('https://akmweb.youngjoygame.com/web/gms/image/10cf23ade94859fd7f6a877c828c0131.webp');
+            background-size: cover; background-position: center; z-index: 100; padding: 25px; box-sizing: border-box;
+        }
+
+        .pay-card {
+            background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 20px;
+            text-align: center; border: 1px solid var(--accent-gold); margin-top: 30px;
+        }
+        .pay-logo { width: 60px; height: 60px; border-radius: 12px; margin: 0 10px; }
+        .info-text { font-size: 22px; font-weight: bold; color: var(--accent-gold); margin: 15px 0; letter-spacing: 1px; }
+
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-order { background: var(--accent-gold); color: #000; margin-top: 25px; opacity: 0.5; pointer-events: none; }
+        .btn-order.enabled { opacity: 1; pointer-events: auto; }
+        .btn-confirm { background: #00ff88; color: #000; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainPage">
+    <div class="header">
+        <img src="https://raw.githubusercontent.com/khunkhaylso-ship-it/JMgame-shop/main/image_cf6071.png" class="main-logo" onerror="this.src='https://via.placeholder.com/100?text=JM'">
+        <h1>JM Diamond Shop</h1>
+    </div>
+
+    <div class="id-section">
+        <input type="number" id="gameId" class="id-input" placeholder="User ID" oninput="validateForm()">
+        <input type="number" id="serverId" class="id-input" style="flex: 0.7;" placeholder="Server ID" oninput="validateForm()">
+    </div>
+
+    <div class="category-title">Weekly Pass</div>
+    <div class="grid">
+        <div class="item" onclick="selectItem(this, 'Weekly Pass', '6,100 ks')">
+            <img src="https://img.smile.one/media/catalog/product/1/5q/15qtr79kjv14qfe1691739555.png">
+            <span class="name">Weekly Pass</span>
+            <span class="price">6,100 ks</span>
+        </div>
+    </div>
+
+    <div class="category-title">Normal Diamonds</div>
+    <div class="grid" id="diaGrid"></div>
+
+    <button id="orderBtn" class="btn btn-order" onclick="goToPayment()">အော်ဒါတင်မည်</button>
+</div>
+
+<div id="paymentPage">
+    <h2 style="text-align: center; color: var(--accent-gold); text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Payment Information</h2>
+    
+    <div class="pay-card">
+        <div style="margin-bottom: 20px;">
+            <img src="https://logodix.com/logo/2117163.png" class="pay-logo">
+            <img src="https://images.sftcdn.net/images/t_app-icon-s/p/07b6a456-b8ce-4264-b490-6d53e6db665e/1250934406/wavepay-app-by-wave-money-logo" class="pay-logo">
+        </div>
+        <div style="font-size: 14px; color: #ccc;">Phone Number</div>
+        <div class="info-text">09759777632</div>
+        <div style="font-size: 16px; font-weight: bold;">Sai Kwan khay</div>
+    </div>
+
+    <div style="margin-top: 30px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px;">
+        <p style="margin: 0 0 15px 0; text-align: center; font-size: 14px;">ငွေလွှဲပြေစာ Screenshot တင်ပေးပါ</p>
+        <input type="file" id="screenshot" accept="image/*" style="width: 100%; color: white;">
+    </div>
+
+    <button class="btn btn-confirm" onclick="confirmPayment()">Confirm Payment</button>
+    <button style="background: none; color: #ddd; border: none; width: 100%; margin-top: 20px; font-size: 14px;" onclick="location.reload()">Back to Shop</button>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let selectedProduct = "";
+    let selectedPrice = "";
+
+    const diamonds = [
+        ["11 Dia", "1,100 ks"], ["22 Dia", "1,900 ks"], ["56 Dia", "4,600 ks"],
+        ["86 Dia", "5,300 ks"], ["112 Dia", "8,600 ks"], ["172 Dia", "10,300 ks"],
+        ["257 Dia", "14,900 ks"], ["343 Dia", "19,700 ks"], ["429 Dia", "24,600 ks"],
+        ["514 Dia", "29,600 ks"], ["600 Dia", "34,100 ks"], ["706 Dia", "39,600 ks"],
+        ["878 Dia", "49,600 ks"], ["1049 Dia", "59,600 ks"], ["2195 Dia", "122,100 ks"],
+        ["3688 Dia", "200,100 ks"], ["5532 Dia", "299,100 ks"], ["9288 Dia", "495,100 ks"]
+    ];
+
+    const diaGrid = document.getElementById('diaGrid');
+    diamonds.forEach(d => {
+        diaGrid.innerHTML += `
+            <div class="item" onclick="selectItem(this, '${d[0]}', '${d[1]}')">
+                <img src="https://cdn1.codashop.com/images/106_5e7a01a7-89b9-4b13-a512-a3e72f63f0d1_product/1760335248434_f41cd03d-bd78-470f-86e5-c42770b55f5f.png">
+                <span class="name">${d[0]}</span>
+                <span class="price">${d[1]}</span>
+            </div>
+        `;
+    });
+
+    function selectItem(el, name, price) {
+        document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        selectedProduct = name;
+        selectedPrice = price;
+        validateForm();
+    }
+
+    function validateForm() {
+        const gid = document.getElementById('gameId').value;
+        const sid = document.getElementById('serverId').value;
+        const btn = document.getElementById('orderBtn');
+        if(gid && sid && selectedProduct) btn.classList.add('enabled');
+        else btn.classList.remove('enabled');
+    }
+
+    function goToPayment() {
+        document.getElementById('mainPage').style.display = 'none';
+        document.getElementById('paymentPage').style.display = 'block';
+    }
+
+    function confirmPayment() {
+        if(!document.getElementById('screenshot').files[0]) return alert("Screenshot တင်ပေးပါ");
+        tg.sendData(JSON.stringify({
+            id: document.getElementById('gameId').value,
+            server: document.getElementById('serverId').value,
+            item: selectedProduct,
+            price: selectedPrice
+        }));
+        tg.close();
+    }
+</script>
+</body>
+</html>
