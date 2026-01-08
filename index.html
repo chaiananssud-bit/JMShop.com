@@ -24,7 +24,6 @@
         .header { text-align: center; margin-bottom: 20px; }
         .main-logo { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--accent-gold); box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
 
-        /* ID & Server Buttons Style Inputs */
         .id-section { display: flex; gap: 10px; margin-bottom: 20px; }
         .id-input {
             flex: 1; padding: 15px; border-radius: 12px; border: 2px solid var(--primary-purple);
@@ -47,7 +46,6 @@
         .item .name { display: block; font-size: 14px; font-weight: bold; }
         .item .price { display: block; font-size: 13px; color: #00ff88; margin-top: 5px; }
 
-        /* Payment Page Overlay */
         #paymentPage {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(44, 0, 62, 0.85), rgba(44, 0, 62, 0.85)), 
@@ -117,7 +115,7 @@
         <input type="file" id="screenshot" accept="image/*" style="width: 100%; color: white;">
     </div>
 
-    <button class="btn btn-confirm" onclick="confirmPayment()">Confirm Payment</button>
+    <button class="btn btn-confirm" id="confirmBtn" onclick="confirmPayment()">Confirm Payment</button>
     <button style="background: none; color: #ddd; border: none; width: 100%; margin-top: 20px; font-size: 14px;" onclick="location.reload()">Back to Shop</button>
 </div>
 
@@ -169,15 +167,44 @@
         document.getElementById('paymentPage').style.display = 'block';
     }
 
-    function confirmPayment() {
-        if(!document.getElementById('screenshot').files[0]) return alert("Screenshot တင်ပေးပါ");
-        tg.sendData(JSON.stringify({
+    // ပြင်ဆင်ထားသော Confirm Payment Function
+    async function confirmPayment() {
+        const fileInput = document.getElementById('screenshot');
+        const confirmBtn = document.getElementById('confirmBtn');
+
+        if(!fileInput.files[0]) return alert("ငွေလွှဲပြေစာ Screenshot တင်ပေးပါဦး");
+
+        // ခလုတ်ကို ခဏပိတ်ထားပါ (Double Click မဖြစ်စေရန်)
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Processing...";
+
+        const orderData = {
             id: document.getElementById('gameId').value,
             server: document.getElementById('serverId').value,
             item: selectedProduct,
             price: selectedPrice
-        }));
-        tg.close();
+        };
+
+        try {
+            // Vercel Backend ဆီသို့ Data ပို့ခြင်း
+            const response = await fetch('/api/bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: JSON.stringify(orderData) })
+            });
+
+            if (response.ok) {
+                alert("အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်။ ကျေးဇူးပြု၍ Screenshot ကို Bot ထံ ထပ်မံပေးပို့ပေးပါ။");
+                tg.close();
+            } else {
+                throw new Error("Server Error");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("အော်ဒါတင်ခြင်း မအောင်မြင်ပါ။ အင်တာနက်ကို စစ်ဆေးပြီး ပြန်ကြိုးစားကြည့်ပါ။");
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = "Confirm Payment";
+        }
     }
 </script>
 </body>
